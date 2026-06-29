@@ -14977,7 +14977,7 @@ function renderTalentCard(talent) {
         const visibleBuilds = builds.filter(b => !checked?.size || [...buildAbilitiesById.get(buildIndexById.get(b))].some(a => checked.has(a)));
         const buildsByAbility = groupBuildsByAbility(visibleBuilds, talentById, nodeById);
         exampleSelect.innerHTML = `
-          <option value="">— Add a signature talent —</option>
+          <option value="">— Select an example build —</option>
           ${ABILITY_GROUPS.filter(g => buildsByAbility.get(g.key).length).map(g => `
             <optgroup label="${escapeHtml(g.label)}">
               ${buildsByAbility.get(g.key).map(b => `<option value="${buildIndexById.get(b)}">${escapeHtml(b.name)}</option>`).join("")}
