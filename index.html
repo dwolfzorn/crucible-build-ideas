@@ -297,6 +297,39 @@ body {
   line-height: 1.5;
 }
 
+.selected-talents-card {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #3a362c;
+}
+
+.selected-talents-card summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.selected-talents-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.selected-talents-card summary h3 {
+  display: inline;
+}
+
+.selected-talents-card summary::before {
+  content: "▾ ";
+  color: #c9a857;
+}
+
+.selected-talents-card:not([open]) summary::before {
+  content: "▸ ";
+}
+
+.selected-talents-card p.meta,
+.selected-talents-card .selected-talent-list {
+  margin-top: 0.5rem;
+}
+
 .selected-talent-list {
   margin: 0;
   padding: 0;
@@ -14683,14 +14716,20 @@ function renderTalentCard(talent) {
    * to the next stat around the ring. A build is keyed to a group by its exact signature ability
    * set: single-ability signatures go in that stat's group; two-ability (always-adjacent) hybrid
    * signatures go in the "Stat A + Stat B" group between them.
-   * @type {{key: string, label: string, abilities: string[]}[]}
+   * @type {{key: string, label: string, abbrLabel: string, abilities: string[]}[]}
    */
   const ABILITY_GROUPS = ABILITY_RING.flatMap((ability, i) => {
     const next = ABILITY_RING[(i + 1) % ABILITY_RING.length];
     const label = s => s[0].toUpperCase() + s.slice(1);
+    const abbr = s => s.slice(0, 3).toUpperCase();
     return [
-      {key: ability, label: label(ability), abilities: [ability]},
-      {key: `${ability}.${next}`, label: `${label(ability)} + ${label(next)}`, abilities: [ability, next]}
+      {key: ability, label: label(ability), abbrLabel: abbr(ability), abilities: [ability]},
+      {
+        key: `${ability}.${next}`,
+        label: `${label(ability)} + ${label(next)}`,
+        abbrLabel: `${abbr(ability)} + ${abbr(next)}`,
+        abilities: [ability, next]
+      }
     ];
   });
 
@@ -14789,6 +14828,42 @@ function renderTalentCard(talent) {
   }
 
   /**
+   * Group builds by their *complete* set of signature stats (not per-adjacent-pair), so each
+   * build appears exactly once under a single group naming every stat it uses, e.g. a build
+   * using Strength, Toughness, and Wisdom signatures gets its own "STR + TOU + WIS" group.
+   * Groups are ordered by their first stat's position around the ability ring, then by size.
+   * @param {object[]} builds
+   * @param {Map<string, object>} talentById
+   * @param {Map<string, object>} nodeById
+   * @returns {{key: string, label: string, abbrLabel: string, builds: object[]}[]}
+   */
+  function groupBuildsByFullAbilitySet(builds, talentById, nodeById) {
+    const label = s => s[0].toUpperCase() + s.slice(1);
+    const abbr = s => s.slice(0, 3).toUpperCase();
+    const groupsByKey = new Map();
+    for ( const build of builds ) {
+      const abilities = [...buildAbilities(build, talentById, nodeById)]
+        .sort((a, b) => ABILITY_RING.indexOf(a) - ABILITY_RING.indexOf(b));
+      if ( !abilities.length ) continue;
+      const key = abilities.join(".");
+      if ( !groupsByKey.has(key) ) {
+        groupsByKey.set(key, {
+          key,
+          label: abilities.map(label).join(" + "),
+          abbrLabel: abilities.map(abbr).join(" + "),
+          firstAbilityIndex: ABILITY_RING.indexOf(abilities[0]),
+          builds: []
+        });
+      }
+      groupsByKey.get(key).builds.push(build);
+    }
+    const groups = [...groupsByKey.values()];
+    for ( const group of groups ) group.builds.sort((a, b) => a.name.localeCompare(b.name));
+    groups.sort((a, b) => a.firstAbilityIndex - b.firstAbilityIndex || a.builds.length - b.builds.length);
+    return groups;
+  }
+
+  /**
    * Mount one independent tree-explorer panel (sidebar + tree viewport + example-build picker).
    * @param {HTMLElement} container
    * @param {object} options
@@ -14811,9 +14886,6 @@ function renderTalentCard(talent) {
     container.innerHTML = `
       <div class="tree-explorer cb-explorer">
         <aside class="tree-sidebar tree-sidebar--left">
-          <h3>Selected Talents</h3>
-          <p class="meta" id="${id('count')}">0 talents selected</p>
-          <ul class="selected-talent-list" id="${id('selected')}"></ul>
           <div class="example-card">
             <h3>${escapeHtml(buildsLabel)}</h3>
             ${builds.length ? `
@@ -14823,19 +14895,24 @@ function renderTalentCard(talent) {
                   ${ABILITY_RING.map(ability => `
                     <label class="cb-stat-filter-item">
                       <input type="checkbox" value="${escapeHtml(ability)}">
-                      <span>${escapeHtml(ability[0].toUpperCase() + ability.slice(1))}</span>
+                      <span>${escapeHtml(ability.slice(0, 3).toUpperCase())}</span>
                     </label>
                   `).join("")}
                 </div>
               ` : ""}
               <p class="meta">Choosing a build adds its talents to your current selection.</p>
               <select class="cb-example-select" id="${id('example-select')}">
-                <option value="">— Add a signature talent —</option>
+                <option value="">${escapeHtml(showStatFilter ? "— Select an example build —" : "— Add a signature talent —")}</option>
               </select>
               <button type="button" id="${id('example-clear')}">Clear all talents</button>
               <div class="cb-example-summary" id="${id('example-summary')}"></div>
             ` : `<p class="meta">${escapeHtml(buildsEmptyMessage)}</p>`}
           </div>
+          <details class="selected-talents-card" open>
+            <summary><h3>Selected Talents</h3></summary>
+            <p class="meta" id="${id('count')}">0 talents selected</p>
+            <ul class="selected-talent-list" id="${id('selected')}"></ul>
+          </details>
         </aside>
         <div class="tree-viewport" id="${id('viewport')}">
           <svg id="${id('svg')}"></svg>
@@ -14975,14 +15052,23 @@ function renderTalentCard(talent) {
           ? new Set([...statFilter.querySelectorAll("input:checked")].map(cb => cb.value))
           : null;
         const visibleBuilds = builds.filter(b => !checked?.size || [...buildAbilitiesById.get(buildIndexById.get(b))].some(a => checked.has(a)));
-        const buildsByAbility = groupBuildsByAbility(visibleBuilds, talentById, nodeById);
+        const optgroupsHtml = showStatFilter
+          ? groupBuildsByFullAbilitySet(visibleBuilds, talentById, nodeById).map(g => `
+              <optgroup label="${escapeHtml(g.abbrLabel)}">
+                ${g.builds.map(b => `<option value="${buildIndexById.get(b)}">${escapeHtml(b.name)}</option>`).join("")}
+              </optgroup>
+            `).join("")
+          : (() => {
+              const buildsByAbility = groupBuildsByAbility(visibleBuilds, talentById, nodeById);
+              return ABILITY_GROUPS.filter(g => buildsByAbility.get(g.key).length).map(g => `
+                <optgroup label="${escapeHtml(g.label)}">
+                  ${buildsByAbility.get(g.key).map(b => `<option value="${buildIndexById.get(b)}">${escapeHtml(b.name)}</option>`).join("")}
+                </optgroup>
+              `).join("");
+            })();
         exampleSelect.innerHTML = `
-          <option value="">— Select an example build —</option>
-          ${ABILITY_GROUPS.filter(g => buildsByAbility.get(g.key).length).map(g => `
-            <optgroup label="${escapeHtml(g.label)}">
-              ${buildsByAbility.get(g.key).map(b => `<option value="${buildIndexById.get(b)}">${escapeHtml(b.name)}</option>`).join("")}
-            </optgroup>
-          `).join("")}
+          <option value="">${escapeHtml(showStatFilter ? "— Select an example build —" : "— Add a signature talent —")}</option>
+          ${optgroupsHtml}
         `;
       }
 
@@ -14992,6 +15078,12 @@ function renderTalentCard(talent) {
       function addExampleBuild(build) {
         selectedNode = null;
         expandedIds.clear();
+        // Pre-built characters are mutually exclusive: picking one replaces any prior selection
+        // rather than stacking, since combining unrelated pre-builts isn't a coherent character.
+        if ( showStatFilter ) {
+          addedTalentIds.clear();
+          addedBuilds.length = 0;
+        }
         for ( const talentId of build.talentIds ) addedTalentIds.add(talentId);
         addedBuilds.push(build);
         for ( const el of nodeG.querySelectorAll(".tte-node--selected") ) el.classList.remove("tte-node--selected");
