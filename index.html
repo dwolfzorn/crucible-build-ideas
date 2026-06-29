@@ -139,10 +139,47 @@ body {
   font-style: italic;
 }
 
+.cb-tab-nav {
+  display: flex;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  border-bottom: 1px solid #3a362c;
+}
+
+.cb-tab-nav-item {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  color: #a59f8e;
+  border-bottom: 2px solid transparent;
+}
+
+.cb-tab-nav-item:hover {
+  color: #e8e3d8;
+}
+
+.cb-tab-nav-item.active {
+  color: #c9a857;
+  border-bottom-color: #c9a857;
+}
+
+.cb-tab-panel {
+  display: none;
+}
+
+.cb-tab-panel.active {
+  display: block;
+}
+
 .tree-explorer {
   display: flex;
   gap: 1rem;
   height: calc(100vh - 3rem);
+}
+
+.cb-tab-panel .tree-explorer {
+  height: calc(100vh - 6rem);
 }
 
 .tree-viewport {
@@ -292,7 +329,7 @@ body {
   border-top: 1px solid #3a362c;
 }
 
-#cb-example-select {
+.cb-example-select {
   width: 100%;
   background: #0b0909;
   border: 1px solid #3a362c;
@@ -303,11 +340,31 @@ body {
   margin-bottom: 0.5rem;
 }
 
-#cb-example-summary p {
+.cb-example-summary p {
   margin: 0;
   font-size: 0.8rem;
   line-height: 1.4;
   color: #c9c3b4;
+}
+
+.cb-stat-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.cb-stat-filter-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cb-stat-filter-item input {
+  cursor: pointer;
 }
 
 .remove-talent {
@@ -14489,6 +14546,484 @@ function renderTalentCard(talent) {
     },
   ];
 
+  /**
+   * Complex, multi-signature pre-built characters (20-30 talent points each), each weaving
+   * together 2-4 thematically and mechanically synergistic signature talents within 1-3
+   * adjacent primary stats around the hex talent-tree ring.
+   */
+  const PREBUILT_BUILDS = [
+    {
+      name: "Bloodfang Reaver",
+      summary: "A Dexterity/Toughness/Strength blood-knight who opens fights with a vampiric bite to fuel a relentless, unyielding grapple-and-bleed assault.",
+      talentIds: ["tailoringNovice0", "twinnedshot00000", "slipstep00000000", "skirmisher000000", "nosferatu0000000", "holdfast00000000", "spellmute0000000", "unshakeablestanc", "juggernaut000000", "sunderingstrike0", "bloodletter00000", "neverYield000000", "impenetrableGuar", "hulkingphysique0", "weakpoints000000", "flurry0000000000", "counterevade0000", "shieldCombatTrai", "unarmedblocking0", "counterstrike000", "wildernessNovice", "ironResolve00000", "secondwind000000", "unarmedCombatTra", "smithingNovice00", "uppercut00000000", "counterriposte00", "executionersstri"]
+    },
+    {
+      name: "Ironroot Ancestor",
+      summary: "A Toughness/Strength/Wisdom living bulwark who grapples foes into submission while ancestral spirits shelter everyone fighting at her side.",
+      talentIds: ["shieldCombatTrai", "unarmedblocking0", "spellmute0000000", "unshakeablestanc", "juggernaut000000", "sunderingstrike0", "gesturestrike000", "powerfulThrow000", "warden0000000000", "stilllake0000000", "impenetrableGuar", "hulkingphysique0", "counterstrike000", "smithingNovice00", "uppercut00000000", "counterriposte00", "unarmedCombatTra", "legsweep00000000", "wrestler00000000", "societyNovice000", "wildspeaker00000", "conserveeffort00"]
+    },
+    {
+      name: "Soulbound Adjudicator",
+      summary: "A Strength/Wisdom/Presence battle-druid who calls ancestral guardians to ward her allies while bending kinetic force to fling foes from the field.",
+      talentIds: ["smithingNovice00", "uppercut00000000", "gesturestrike000", "powerfulThrow000", "warden0000000000", "stilllake0000000", "unshakeablePoise", "thoughtbinder000", "telekinetic00000", "mentalfortress00", "inexorableFlame0", "legsweep00000000", "wrestler00000000", "societyNovice000", "wildspeaker00000", "conserveeffort00", "runeLife00000000", "gestureray000000", "provocateur00000", "talismanWeaponTr", "inspireheroism00", "soothe0000000000"]
+    },
+    {
+      name: "Mindshatter Oracle",
+      summary: "A Wisdom/Presence/Intellect psychic controller who flings enemies about with kinetic force, dominates their will with the Rune of Control, and orchestrates allies' strikes around the chaos.",
+      talentIds: ["societyNovice000", "wildspeaker00000", "unshakeablePoise", "thoughtbinder000", "telekinetic00000", "mentalfortress00", "rallyingCry00000", "necromancer00000", "tactician0000000", "voidcaller000000", "inexorableFlame0", "gesturepulse0000", "gestureCone00000", "runeLife00000000", "gestureray000000", "provocateur00000", "talismanWeaponTr", "inspireheroism00", "intimidator00000", "runeSoul00000000", "gestureSense0000", "runeStorm0000000", "gesturefan000000", "intuitweakness00"]
+    },
+    {
+      name: "Gunsinger's Gambit",
+      summary: "A Presence/Intellect/Dexterity field commander who calls the shots, both tactically and literally, free-reloading her firearm while dominating the will of the foes she pins down.",
+      talentIds: ["talismanWeaponTr", "inspireheroism00", "rallyingCry00000", "necromancer00000", "tactician0000000", "voidcaller000000", "recognizespellcr", "strategicreposit", "pistoleer0000000", "pinningshot00000", "gesturepulse0000", "gestureCone00000", "intellectualsupe", "interruptingDagg", "runeSoul00000000", "gestureSense0000", "intimidator00000", "scienceNovice000", "versatileTransla", "alchemicalresolv", "tailoringNovice0", "twinnedshot00000", "markprey00000000", "runeStorm0000000", "gesturefan000000", "intuitweakness00"]
+    },
+    {
+      name: "Clockwork Vanguard",
+      summary: "An Intellect/Dexterity/Toughness gadgeteer gunslinger who free-reloads mid-fight, marks targets for execution, and falls back on a vampiric bite when the gun runs dry.",
+      talentIds: ["tailoringNovice0", "twinnedshot00000", "markprey00000000", "pinningshot00000", "pistoleer0000000", "slipstep00000000", "skirmisher000000", "nosferatu0000000", "strategicreposit", "holdfast00000000", "intellectualsupe", "interruptingDagg", "bloodletter00000", "neverYield000000", "scienceNovice000", "versatileTransla", "alchemicalresolv", "weakpoints000000", "flurry0000000000", "counterevade0000", "shieldCombatTrai", "unarmedblocking0", "counterstrike000"]
+    },
+    {
+      name: "Featherfall Duelist",
+      summary: "A Dexterity/Toughness swashbuckler who shatters enemy Morale on every parried blow and finishes the job with a hungry, life-stealing bite.",
+      talentIds: ["tailoringNovice0", "twinnedshot00000", "markprey00000000", "pinningshot00000", "swashbuckler0000", "skirmisher000000", "nosferatu0000000", "holdfast00000000", "tailoringJourney", "safecracker00000", "bloodletter00000", "neverYield000000", "weakpoints000000", "flurry0000000000", "slipstep00000000", "counterevade0000", "shieldCombatTrai", "unarmedblocking0", "wildernessNovice", "ironResolve00000", "counterstrike000", "spellmute0000000", "secondwind000000", "wildernessJourne", "repercussiveBloc"]
+    },
+    {
+      name: "Stonewarden Colossus",
+      summary: "A Toughness/Strength brute who can shift into a beast's hide mid-battle, then return to humanoid form to grapple anything bigger than himself into the dirt.",
+      talentIds: ["shieldCombatTrai", "unarmedblocking0", "counterstrike000", "holdfast00000000", "shapeshifter0000", "unshakeablestanc", "juggernaut000000", "sunderingstrike0", "wildernessJourne", "repercussiveBloc", "impenetrableGuar", "hulkingphysique0", "wildernessNovice", "ironResolve00000", "spellmute0000000", "secondwind000000", "smithingNovice00", "uppercut00000000", "unarmedCombatTra", "legsweep00000000", "counterriposte00", "wrestler00000000"]
+    },
+    {
+      name: "Runic Battlechanter",
+      summary: "A Strength/Wisdom battle-singer whose chants of war are renewed by every melee strike, while an ancestral guardian shields the choir from harm.",
+      talentIds: ["smithingNovice00", "uppercut00000000", "counterriposte00", "sunderingstrike0", "warchanter000000", "powerfulThrow000", "warden0000000000", "stilllake0000000", "executionersstri", "unarmedCombatPro", "unarmedCombatTra", "legsweep00000000", "gesturestrike000", "wrestler00000000", "societyNovice000", "wildspeaker00000", "conserveeffort00", "runeLife00000000", "gestureray000000", "unshakeablePoise", "provocateur00000"]
+    },
+    {
+      name: "Hollow Choir",
+      summary: "A Wisdom/Presence spellweaver who chains spell after spell with carried-forward momentum, then bends the leftover kinetic force to push, pull, and suspend her foes.",
+      talentIds: ["societyNovice000", "wildspeaker00000", "conserveeffort00", "stilllake0000000", "wizard0000000000", "thoughtbinder000", "telekinetic00000", "mentalfortress00", "societyJourneyma", "lifeProficiency0", "inexorableFlame0", "runeLife00000000", "gestureray000000", "unshakeablePoise", "provocateur00000", "talismanWeaponTr", "inspireheroism00", "soothe0000000000", "runeSoul00000000", "gestureSense0000"]
+    },
+    {
+      name: "Dirge of Hollow Crowns",
+      summary: "A Presence/Intellect commander who weaves war-chants from every blow her allies land while directing the battlefield like a chessboard of dominated wills.",
+      talentIds: ["talismanWeaponTr", "inspireheroism00", "soothe0000000000", "mentalfortress00", "warchanter000000", "necromancer00000", "tactician0000000", "voidcaller000000", "talismanWeaponPr", "soulProficiency0", "gesturepulse0000", "gestureCone00000", "runeSoul00000000", "gestureSense0000", "rallyingCry00000", "intimidator00000", "runeStorm0000000", "gesturefan000000", "intuitweakness00", "scienceNovice000", "versatileTransla"]
+    },
+    {
+      name: "Voidstep Magus",
+      summary: "An Intellect/Dexterity spellslinger who chains spells with carried-forward Focus discounts, then drops the wand for a pistol she never has to stop to reload.",
+      talentIds: ["runeStorm0000000", "gesturefan000000", "intuitweakness00", "voidcaller000000", "wizard0000000000", "strategicreposit", "pistoleer0000000", "pinningshot00000", "stormProficiency", "scienceJourneyma", "intellectualsupe", "interruptingDagg", "scienceNovice000", "versatileTransla", "recognizespellcr", "alchemicalresolv", "tailoringNovice0", "twinnedshot00000", "markprey00000000", "weakpoints000000", "flurry0000000000"]
+    },
+    {
+      name: "Crimson Vanguard",
+      summary: "A Dexterity/Toughness/Strength blood-knight trinity: a swashbuckler's bravado breaks enemy morale, a vampiric bite sustains the fight, and an unbreakable grapple finishes it.",
+      talentIds: ["tailoringNovice0", "twinnedshot00000", "markprey00000000", "pinningshot00000", "swashbuckler0000", "skirmisher000000", "nosferatu0000000", "holdfast00000000", "spellmute0000000", "unshakeablestanc", "juggernaut000000", "sunderingstrike0", "tailoringJourney", "safecracker00000", "bloodletter00000", "neverYield000000", "impenetrableGuar", "hulkingphysique0", "shieldCombatTrai", "unarmedblocking0", "counterstrike000", "smithingNovice00", "uppercut00000000"]
+    },
+    {
+      name: "Bulwark of the Deep Roots",
+      summary: "A Toughness/Strength/Wisdom living fortress who can take a beast's shape, grapple foes twice her size, and call an ancestral guardian to shield everyone in the line.",
+      talentIds: ["shieldCombatTrai", "unarmedblocking0", "counterstrike000", "holdfast00000000", "shapeshifter0000", "unshakeablestanc", "juggernaut000000", "sunderingstrike0", "gesturestrike000", "powerfulThrow000", "warden0000000000", "stilllake0000000", "wildernessJourne", "repercussiveBloc", "hulkingphysique0", "smithingNovice00", "uppercut00000000", "societyNovice000", "wildspeaker00000", "wildernessNovice", "ironResolve00000", "unarmedCombatTra", "legsweep00000000", "runeLife00000000", "gestureray000000"]
+    },
+    {
+      name: "Thornbound Chorus",
+      summary: "A Strength/Wisdom/Presence battle-singer who renews her war-chants on every strike, calls ancestral spirits to ward her allies, and bends kinetic force to hurl foes from the song's rhythm.",
+      talentIds: ["smithingNovice00", "uppercut00000000", "counterriposte00", "sunderingstrike0", "warchanter000000", "powerfulThrow000", "warden0000000000", "stilllake0000000", "unshakeablePoise", "thoughtbinder000", "telekinetic00000", "mentalfortress00", "executionersstri", "unarmedCombatPro", "inexorableFlame0", "societyNovice000", "wildspeaker00000", "talismanWeaponTr", "inspireheroism00", "unarmedCombatTra", "legsweep00000000", "runeLife00000000", "gestureray000000"]
+    },
+    {
+      name: "Eidolon Cabal",
+      summary: "A Wisdom/Presence/Intellect arcane triumvirate who chains spells through carried-forward Focus, hurls foes with kinetic force, and directs allies' strikes like pieces on a board.",
+      talentIds: ["societyNovice000", "wildspeaker00000", "conserveeffort00", "stilllake0000000", "wizard0000000000", "thoughtbinder000", "telekinetic00000", "mentalfortress00", "rallyingCry00000", "necromancer00000", "tactician0000000", "voidcaller000000", "societyJourneyma", "lifeProficiency0", "talismanWeaponPr", "soulProficiency0", "stormProficiency", "talismanWeaponTr", "inspireheroism00", "runeStorm0000000", "gesturefan000000", "runeLife00000000", "gestureray000000", "runeSoul00000000", "gestureSense0000"]
+    },
+    {
+      name: "Masque of Iron Resolve",
+      summary: "A Presence/Intellect/Dexterity battle-conductor whose war-chants build with every blow, whose tactics dominate enemy will, and whose pistol never needs a reload to keep the rhythm.",
+      talentIds: ["talismanWeaponTr", "inspireheroism00", "soothe0000000000", "mentalfortress00", "warchanter000000", "necromancer00000", "tactician0000000", "voidcaller000000", "recognizespellcr", "strategicreposit", "pistoleer0000000", "pinningshot00000", "talismanWeaponPr", "soulProficiency0", "intellectualsupe", "interruptingDagg", "scienceNovice000", "versatileTransla", "tailoringNovice0", "twinnedshot00000", "runeSoul00000000", "gestureSense0000", "runeStorm0000000", "gesturefan000000"]
+    },
+    {
+      name: "Ghostwire Saboteur",
+      summary: "An Intellect/Dexterity/Toughness infiltrator-mage who chains spells with carried-forward Focus, reloads her sidearm for free, and seals any failed ambush with a vampiric bite.",
+      talentIds: ["runeStorm0000000", "gesturefan000000", "intuitweakness00", "voidcaller000000", "wizard0000000000", "strategicreposit", "pistoleer0000000", "pinningshot00000", "slipstep00000000", "skirmisher000000", "nosferatu0000000", "holdfast00000000", "stormProficiency", "scienceJourneyma", "interruptingDagg", "bloodletter00000", "neverYield000000", "tailoringNovice0", "twinnedshot00000", "shieldCombatTrai", "unarmedblocking0", "scienceNovice000", "versatileTransla"]
+    },
+    {
+      name: "Hollow Marksman",
+      summary: "A Dexterity/Intellect skirmisher-gunslinger whose bravado shatters enemy Morale on every parry, while her keen mind reads the battlefield and her pistol never runs dry.",
+      talentIds: ["tailoringNovice0", "twinnedshot00000", "markprey00000000", "pinningshot00000", "swashbuckler0000", "pistoleer0000000", "skirmisher000000", "strategicreposit", "tailoringJourney", "safecracker00000", "interruptingDagg", "intellectualsupe", "weakpoints000000", "flurry0000000000", "slipstep00000000", "counterevade0000", "scienceNovice000", "versatileTransla", "alchemicalresolv", "runeStorm0000000", "gesturefan000000"]
+    },
+    {
+      name: "Sanguine Hymnal",
+      summary: "A Presence/Wisdom battle-singer whose war-chants swell with every strike while she bends kinetic force to fling, suspend, and reshape the tide of combat around her allies.",
+      talentIds: ["talismanWeaponTr", "inspireheroism00", "soothe0000000000", "mentalfortress00", "warchanter000000", "telekinetic00000", "necromancer00000", "thoughtbinder000", "talismanWeaponPr", "soulProficiency0", "inexorableFlame0", "runeSoul00000000", "gestureSense0000", "rallyingCry00000", "intimidator00000", "runeLife00000000", "gestureray000000", "provocateur00000", "societyNovice000", "wildspeaker00000", "conserveeffort00"]
+    },
+    {
+      name: "Wraithskin Render",
+      summary: "A Toughness/Dexterity shapeshifting predator who takes a beast's form to close distance, then reverts to humanoid shape to open old wounds with a vampiric, bleeding bite.",
+      talentIds: ["shieldCombatTrai", "unarmedblocking0", "counterstrike000", "holdfast00000000", "shapeshifter0000", "nosferatu0000000", "unshakeablestanc", "skirmisher000000", "wildernessJourne", "repercussiveBloc", "bloodletter00000", "wildernessNovice", "ironResolve00000", "spellmute0000000", "secondwind000000", "weakpoints000000", "flurry0000000000", "counterevade0000", "tailoringNovice0", "twinnedshot00000"]
+    },
+    {
+      name: "Warhost Mauler",
+      summary: "A Strength/Toughness war-singer whose chants build with every melee strike while her unbreakable grapple locks down foes twice her size for the chorus to finish.",
+      talentIds: ["smithingNovice00", "uppercut00000000", "counterriposte00", "sunderingstrike0", "warchanter000000", "juggernaut000000", "powerfulThrow000", "unshakeablestanc", "executionersstri", "unarmedCombatPro", "impenetrableGuar", "unarmedCombatTra", "legsweep00000000", "gesturestrike000", "wrestler00000000", "shieldCombatTrai", "unarmedblocking0", "wildernessNovice", "ironResolve00000", "secondwind000000"]
+    },
+    {
+      name: "Verdant Oathkeeper",
+      summary: "A Wisdom/Strength hybrid druid-mage who chains spell after spell with carried-forward momentum while an ancestral guardian's protective grove shields her allies.",
+      talentIds: ["societyNovice000", "wildspeaker00000", "conserveeffort00", "stilllake0000000", "wizard0000000000", "warden0000000000", "thoughtbinder000", "powerfulThrow000", "societyJourneyma", "lifeProficiency0", "runeLife00000000", "gestureray000000", "unshakeablePoise", "provocateur00000", "unarmedCombatTra", "legsweep00000000", "wrestler00000000", "smithingNovice00", "uppercut00000000", "counterriposte00"]
+    },
+    {
+      name: "Riftbound Tactician",
+      summary: "An Intellect/Presence field commander who chains spells through carried-forward Focus discounts while dominating the will of any foe her tactics single out.",
+      talentIds: ["runeStorm0000000", "gesturefan000000", "intuitweakness00", "voidcaller000000", "wizard0000000000", "tactician0000000", "strategicreposit", "necromancer00000", "stormProficiency", "scienceJourneyma", "gesturepulse0000", "scienceNovice000", "versatileTransla", "recognizespellcr", "alchemicalresolv", "runeSoul00000000", "gestureSense0000", "intimidator00000", "talismanWeaponTr", "inspireheroism00"]
+    }
+  ];
+
+  // Ring order in which the 6 primary stats sit around the talent tree (module/const/tree.mjs
+  // TIER_3B): each stat is adjacent to its neighbors here, wrapping from intellect back to dexterity.
+  const ABILITY_RING = ["dexterity", "toughness", "strength", "wisdom", "presence", "intellect"];
+
+  /**
+   * Dropdown groups in display order: each single stat, followed by the hybrid pair bridging it
+   * to the next stat around the ring. A build is keyed to a group by its exact signature ability
+   * set: single-ability signatures go in that stat's group; two-ability (always-adjacent) hybrid
+   * signatures go in the "Stat A + Stat B" group between them.
+   * @type {{key: string, label: string, abilities: string[]}[]}
+   */
+  const ABILITY_GROUPS = ABILITY_RING.flatMap((ability, i) => {
+    const next = ABILITY_RING[(i + 1) % ABILITY_RING.length];
+    const label = s => s[0].toUpperCase() + s.slice(1);
+    return [
+      {key: ability, label: label(ability), abilities: [ability]},
+      {key: `${ability}.${next}`, label: `${label(ability)} + ${label(next)}`, abilities: [ability, next]}
+    ];
+  });
+
+  /**
+   * Resolve which tree node each of a build's talents actually occupies. Most talents have a
+   * single placement, but a few (e.g. talents named "Warchanter"/"Wizard") sit at two different
+   * signature nodes in different stat wedges - the correct one is whichever is connected back to
+   * origin through the build's other selected nodes. Falls back to the first placement if no
+   * placement is connected (e.g. a build still being assembled).
+   * @param {object} build
+   * @param {Map<string, object>} talentById
+   * @param {Map<string, object>} nodeById
+   * @returns {Map<string, object>} talentId -> resolved node
+   */
+  function resolveBuildNodes(build, talentById, nodeById) {
+    const talents = build.talentIds.map(tid => talentById.get(tid)).filter(Boolean);
+    const candidateNodeIds = talents.map(t => t.placements.filter(p => p.onTree !== false).map(p => p.id));
+    const allCandidateIds = new Set(candidateNodeIds.flat());
+
+    function isConnected(chosenIds) {
+      const set = new Set(chosenIds);
+      set.add("origin");
+      const visited = new Set(["origin"]);
+      const queue = ["origin"];
+      while ( queue.length ) {
+        const cur = queue.pop();
+        for ( const adj of nodeById.get(cur)?.connected ?? [] ) {
+          if ( set.has(adj) && !visited.has(adj) ) {
+            visited.add(adj);
+            queue.push(adj);
+          }
+        }
+      }
+      return [...set].every(nid => visited.has(nid));
+    }
+
+    // Single-placement talents are fixed; only brute-force the ambiguous multi-placement ones.
+    const multiIdx = candidateNodeIds.map((c, i) => c.length > 1 ? i : -1).filter(i => i >= 0);
+    let chosen = candidateNodeIds.map(c => c[0]);
+    if ( !isConnected(chosen) && multiIdx.length ) {
+      const combos = [];
+      (function rec(pos, acc) {
+        if ( pos === multiIdx.length ) { combos.push({...acc}); return; }
+        for ( let v = 0; v < candidateNodeIds[multiIdx[pos]].length; v++ ) rec(pos + 1, {...acc, [multiIdx[pos]]: v});
+      })(0, {});
+      for ( const combo of combos ) {
+        const attempt = candidateNodeIds.map((c, i) => c[combo[i] ?? 0]);
+        if ( isConnected(attempt) ) { chosen = attempt; break; }
+      }
+    }
+
+    const result = new Map();
+    for ( let i = 0; i < talents.length; i++ ) result.set(talents[i].id, nodeById.get(chosen[i]));
+    return result;
+  }
+
+  /**
+   * The set of primary abilities covered by a build's signature talent(s), resolved to the
+   * specific tree node each talent actually occupies in this build (see resolveBuildNodes).
+   * @param {object} build
+   * @param {Map<string, object>} talentById
+   * @param {Map<string, object>} nodeById
+   * @returns {Set<string>}
+   */
+  function buildAbilities(build, talentById, nodeById) {
+    const abilities = new Set();
+    for ( const node of resolveBuildNodes(build, talentById, nodeById).values() ) {
+      if ( node?.type === "signature" ) for ( const ability of node.abilities ) abilities.add(ability);
+    }
+    return abilities;
+  }
+
+  /**
+   * Group builds by the exact ability set of their signature talent(s) (single-stat or hybrid,
+   * resolved per resolveBuildNodes). Builds with no signature talent are omitted.
+   * @param {object[]} builds
+   * @param {Map<string, object>} talentById
+   * @param {Map<string, object>} nodeById
+   * @returns {Map<string, object[]>} group key -> builds, alphabetized within each group
+   */
+  function groupBuildsByAbility(builds, talentById, nodeById) {
+    const groups = new Map(ABILITY_GROUPS.map(g => [g.key, []]));
+    const keyByAbilitySet = new Map(ABILITY_GROUPS.map(g => [[...g.abilities].sort().join("+"), g.key]));
+    for ( const build of builds ) {
+      const abilitySets = new Set();
+      for ( const node of resolveBuildNodes(build, talentById, nodeById).values() ) {
+        if ( node?.type === "signature" ) abilitySets.add([...node.abilities].sort().join("+"));
+      }
+      for ( const abilitySet of abilitySets ) {
+        const key = keyByAbilitySet.get(abilitySet);
+        if ( key ) groups.get(key).push(build);
+      }
+    }
+    for ( const groupBuilds of groups.values() ) groupBuilds.sort((a, b) => a.name.localeCompare(b.name));
+    return groups;
+  }
+
+  /**
+   * Mount one independent tree-explorer panel (sidebar + tree viewport + example-build picker).
+   * @param {HTMLElement} container
+   * @param {object} options
+   * @param {string} options.idPrefix - unique DOM id prefix so multiple panels can coexist
+   * @param {object[]} options.nodes
+   * @param {object[]} options.talents
+   * @param {object[]} options.builds
+   * @param {string} options.buildsLabel
+   * @param {string} options.buildsEmptyMessage
+   * @param {boolean} [options.showStatFilter] - show stat-checkbox filter above the build picker
+   */
+  function mountTreePanel(container, {idPrefix, nodes, talents, builds, buildsLabel, buildsEmptyMessage, showStatFilter}) {
+    const id = suffix => `${idPrefix}-${suffix}`;
+    const nodeById = new Map(nodes.map(n => [n.id, n]));
+    const talentById = new Map(talents.map(t => [t.id, t]));
+    const onTreeNodes = nodes.filter(n => n.onTree);
+    const buildIndexById = new Map(builds.map((b, i) => [b, i]));
+    const buildAbilitiesById = new Map(builds.map((b, i) => [i, buildAbilities(b, talentById, nodeById)]));
+
+    container.innerHTML = `
+      <div class="tree-explorer cb-explorer">
+        <aside class="tree-sidebar tree-sidebar--left">
+          <h3>Selected Talents</h3>
+          <p class="meta" id="${id('count')}">0 talents selected</p>
+          <ul class="selected-talent-list" id="${id('selected')}"></ul>
+          <div class="example-card">
+            <h3>${escapeHtml(buildsLabel)}</h3>
+            ${builds.length ? `
+              ${showStatFilter ? `
+                <p class="meta">Show builds for these primary stats:</p>
+                <div class="cb-stat-filter" id="${id('stat-filter')}">
+                  ${ABILITY_RING.map(ability => `
+                    <label class="cb-stat-filter-item">
+                      <input type="checkbox" value="${escapeHtml(ability)}">
+                      <span>${escapeHtml(ability[0].toUpperCase() + ability.slice(1))}</span>
+                    </label>
+                  `).join("")}
+                </div>
+              ` : ""}
+              <p class="meta">Choosing a build adds its talents to your current selection.</p>
+              <select class="cb-example-select" id="${id('example-select')}">
+                <option value="">— Add a signature talent —</option>
+              </select>
+              <button type="button" id="${id('example-clear')}">Clear all talents</button>
+              <div class="cb-example-summary" id="${id('example-summary')}"></div>
+            ` : `<p class="meta">${escapeHtml(buildsEmptyMessage)}</p>`}
+          </div>
+        </aside>
+        <div class="tree-viewport" id="${id('viewport')}">
+          <svg id="${id('svg')}"></svg>
+          <div class="tree-popouts" id="${id('popouts')}"></div>
+          <div class="tree-controls"><button id="${id('reset')}">Reset view</button></div>
+          <div class="tree-legend" id="${id('legend')}"></div>
+        </div>
+      </div>
+    `;
+
+    const svg = container.querySelector(`#${id('svg')}`);
+    const popoutLayer = container.querySelector(`#${id('popouts')}`);
+    const legend = container.querySelector(`#${id('legend')}`);
+    const selectedList = container.querySelector(`#${id('selected')}`);
+    const selectedCount = container.querySelector(`#${id('count')}`);
+
+    legend.innerHTML = Object.entries(ABILITY_COLORS)
+      .map(([ability, color]) => `<span class="legend-item"><i style="background:${color}"></i>${escapeHtml(ability)}</span>`)
+      .join("");
+
+    const {g, nodeG} = buildGraph(svg, nodes, nodeById);
+    const popoutLineG = createSvgEl("g", {class: "tte-popout-lines"});
+    svg.appendChild(popoutLineG);
+
+    let selectedNode = null;
+    let state = fitToView(svg, g, onTreeNodes.map(n => n.point));
+    const expandedIds = new Set();
+    const addedTalentIds = new Set();
+
+    const projectPoint = point => ({x: state.tx + (point.x * state.scale), y: state.ty + (point.y * state.scale)});
+
+    function refreshNodeHighlights() {
+      for ( const shape of nodeG.querySelectorAll(".tte-node") ) {
+        const node = nodeById.get(shape.dataset.nodeId);
+        const owned = node.talentIds.some(tid => addedTalentIds.has(tid));
+        shape.classList.toggle("tte-node--owned", owned);
+      }
+    }
+
+    function refreshSelectedList() {
+      const added = [...addedTalentIds].map(tid => talentById.get(tid)).filter(Boolean)
+        .sort((a, b) => a.name.localeCompare(b.name));
+      selectedCount.textContent = `${added.length} talent${added.length === 1 ? "" : "s"} selected`;
+      selectedList.innerHTML = added.map(t => `
+        <li>
+          <span>${escapeHtml(t.name)}</span>
+          <button type="button" class="remove-talent" data-talent-id="${escapeHtml(t.id)}" title="Remove">&times;</button>
+        </li>
+      `).join("") || `<li class="selected-talent-empty">Click a node to add talents.</li>`;
+    }
+
+    function toggleTalent(talentId) {
+      if ( addedTalentIds.has(talentId) ) addedTalentIds.delete(talentId);
+      else addedTalentIds.add(talentId);
+      refreshNodeHighlights();
+      refreshSelectedList();
+      refreshPopouts();
+    }
+
+    const renderCard = talent => {
+      if ( !talent ) return {html: `<p class="tte-popout-empty">No talent assigned</p>`, className: ""};
+      const isLong = talent.description.length > POPOUT_TRUNCATE_LENGTH;
+      const expanded = expandedIds.has(talent.id);
+      const added = addedTalentIds.has(talent.id);
+      const text = (isLong && !expanded) ? `${talent.description.slice(0, POPOUT_TRUNCATE_LENGTH)}...` : talent.description;
+      const toggle = isLong
+        ? `<button type="button" class="tte-popout-toggle" data-talent-id="${escapeHtml(talent.id)}">${expanded ? "Show less" : "Read more"}</button>`
+        : "";
+      const addButton = `<button type="button" class="tte-popout-add${added ? " tte-popout-add--added" : ""}" data-add-talent-id="${escapeHtml(talent.id)}">${added ? "Remove" : "Add"}</button>`;
+      return {
+        html: `<h4>${escapeHtml(talent.name)}</h4><p>${escapeHtml(text)}</p>${renderActions(talent.actions)}<div class="tte-popout-actions">${toggle}${addButton}</div>`,
+        className: `${expanded ? "tte-popout--expanded" : ""}${added ? " tte-popout--added" : ""}`.trim()
+      };
+    };
+
+    const refreshPopouts = () => renderPopouts(popoutLayer, popoutLineG, selectedNode, talentById, projectPoint, renderCard);
+
+    popoutLayer.addEventListener("click", e => {
+      const addId = e.target?.dataset?.addTalentId;
+      if ( addId ) {
+        toggleTalent(addId);
+        return;
+      }
+      const toggleId = e.target?.dataset?.talentId;
+      if ( toggleId ) {
+        if ( expandedIds.has(toggleId) ) expandedIds.delete(toggleId);
+        else expandedIds.add(toggleId);
+        refreshPopouts();
+      }
+    });
+
+    selectedList.addEventListener("click", e => {
+      const talentId = e.target?.dataset?.talentId;
+      if ( talentId ) toggleTalent(talentId);
+    });
+
+    const getState = () => state;
+    const setState = next => {
+      state = next;
+      g.setAttribute("transform", `translate(${state.tx},${state.ty}) scale(${state.scale})`);
+      refreshPopouts();
+    };
+    const {wasDragged} = activatePanZoom(svg, g, getState, setState);
+
+    container.querySelector(`#${id('reset')}`).addEventListener("click", () => {
+      selectedNode = null;
+      expandedIds.clear();
+      for ( const el of nodeG.querySelectorAll(".tte-node--selected") ) el.classList.remove("tte-node--selected");
+      setState(fitToView(svg, g, onTreeNodes.map(n => n.point)));
+    });
+
+    svg.addEventListener("click", e => {
+      if ( wasDragged() ) return;
+      const nodeId = e.target?.dataset?.nodeId;
+      for ( const el of nodeG.querySelectorAll(".tte-node--selected") ) el.classList.remove("tte-node--selected");
+      if ( !nodeId ) {
+        selectedNode = null;
+        expandedIds.clear();
+        refreshPopouts();
+        return;
+      }
+      if ( selectedNode?.id !== nodeId ) expandedIds.clear();
+      e.target.classList.add("tte-node--selected");
+      selectedNode = nodeById.get(nodeId);
+      refreshPopouts();
+    });
+
+    if ( builds.length ) {
+      const exampleSelect = container.querySelector(`#${id('example-select')}`);
+      const exampleSummary = container.querySelector(`#${id('example-summary')}`);
+      const exampleClear = container.querySelector(`#${id('example-clear')}`);
+      const statFilter = container.querySelector(`#${id('stat-filter')}`);
+      const addedBuilds = [];
+
+      function renderBuildOptions() {
+        const checked = statFilter
+          ? new Set([...statFilter.querySelectorAll("input:checked")].map(cb => cb.value))
+          : null;
+        const visibleBuilds = builds.filter(b => !checked?.size || [...buildAbilitiesById.get(buildIndexById.get(b))].some(a => checked.has(a)));
+        const buildsByAbility = groupBuildsByAbility(visibleBuilds, talentById, nodeById);
+        exampleSelect.innerHTML = `
+          <option value="">— Add a signature talent —</option>
+          ${ABILITY_GROUPS.filter(g => buildsByAbility.get(g.key).length).map(g => `
+            <optgroup label="${escapeHtml(g.label)}">
+              ${buildsByAbility.get(g.key).map(b => `<option value="${buildIndexById.get(b)}">${escapeHtml(b.name)}</option>`).join("")}
+            </optgroup>
+          `).join("")}
+        `;
+      }
+
+      renderBuildOptions();
+      statFilter?.addEventListener("change", renderBuildOptions);
+
+      function addExampleBuild(build) {
+        selectedNode = null;
+        expandedIds.clear();
+        for ( const talentId of build.talentIds ) addedTalentIds.add(talentId);
+        addedBuilds.push(build);
+        for ( const el of nodeG.querySelectorAll(".tte-node--selected") ) el.classList.remove("tte-node--selected");
+        refreshNodeHighlights();
+        refreshSelectedList();
+        refreshPopouts();
+        exampleSummary.innerHTML = addedBuilds.map(b => `<p><strong>${escapeHtml(b.name)}:</strong> ${escapeHtml(b.summary)}</p>`).join("");
+      }
+
+      exampleSelect.addEventListener("change", () => {
+        const build = builds[exampleSelect.value];
+        exampleSelect.value = "";
+        if ( !build ) return;
+        addExampleBuild(build);
+      });
+
+      exampleClear.addEventListener("click", () => {
+        selectedNode = null;
+        expandedIds.clear();
+        addedTalentIds.clear();
+        addedBuilds.length = 0;
+        for ( const el of nodeG.querySelectorAll(".tte-node--selected") ) el.classList.remove("tte-node--selected");
+        refreshNodeHighlights();
+        refreshSelectedList();
+        refreshPopouts();
+        exampleSummary.innerHTML = "";
+      });
+    }
+
+    refreshNodeHighlights();
+    refreshSelectedList();
+  }
 
   (window.CrucibleTools = window.CrucibleTools || []).push({
     id: "character-builder",
@@ -14502,177 +15037,50 @@ function renderTalentCard(talent) {
         return;
       }
 
-      const nodeById = new Map(nodes.map(n => [n.id, n]));
-      const talentById = new Map(talents.map(t => [t.id, t]));
-      const onTreeNodes = nodes.filter(n => n.onTree);
-
       container.innerHTML = `
-        <div class="tree-explorer cb-explorer">
-          <aside class="tree-sidebar tree-sidebar--left">
-            <h3>Selected Talents</h3>
-            <p class="meta" id="cb-count">0 talents selected</p>
-            <ul class="selected-talent-list" id="cb-selected"></ul>
-            <div class="example-card">
-              <h3>Example Characters</h3>
-              <select id="cb-example-select">
-                <option value="">— Choose a build —</option>
-                ${EXAMPLE_BUILDS.map((b, i) => `<option value="${i}">${escapeHtml(b.name)}</option>`).join("")}
-              </select>
-              <div id="cb-example-summary"></div>
-            </div>
-          </aside>
-          <div class="tree-viewport" id="cb-viewport">
-            <svg id="cb-svg"></svg>
-            <div class="tree-popouts" id="cb-popouts"></div>
-            <div class="tree-controls"><button id="cb-reset">Reset view</button></div>
-            <div class="tree-legend" id="cb-legend"></div>
-          </div>
+        <div class="cb-tabs">
+          <ul class="cb-tab-nav">
+            <li class="cb-tab-nav-item active" data-tab="own">Build your own</li>
+            <li class="cb-tab-nav-item" data-tab="prebuilt">Pre-built</li>
+          </ul>
+          <div class="cb-tab-panel active" data-tab="own"></div>
+          <div class="cb-tab-panel" data-tab="prebuilt"></div>
         </div>
       `;
 
-      const svg = container.querySelector("#cb-svg");
-      const popoutLayer = container.querySelector("#cb-popouts");
-      const legend = container.querySelector("#cb-legend");
-      const selectedList = container.querySelector("#cb-selected");
-      const selectedCount = container.querySelector("#cb-count");
-
-      legend.innerHTML = Object.entries(ABILITY_COLORS)
-        .map(([ability, color]) => `<span class="legend-item"><i style="background:${color}"></i>${escapeHtml(ability)}</span>`)
-        .join("");
-
-      const {g, nodeG} = buildGraph(svg, nodes, nodeById);
-      const popoutLineG = createSvgEl("g", {class: "tte-popout-lines"});
-      svg.appendChild(popoutLineG);
-
-      let selectedNode = null;
-      let state = fitToView(svg, g, onTreeNodes.map(n => n.point));
-      const expandedIds = new Set();
-      const addedTalentIds = new Set();
-
-      const projectPoint = point => ({x: state.tx + (point.x * state.scale), y: state.ty + (point.y * state.scale)});
-
-      function refreshNodeHighlights() {
-        for ( const shape of nodeG.querySelectorAll(".tte-node") ) {
-          const node = nodeById.get(shape.dataset.nodeId);
-          const owned = node.talentIds.some(id => addedTalentIds.has(id));
-          shape.classList.toggle("tte-node--owned", owned);
+      const tabNavItems = container.querySelectorAll(".cb-tab-nav-item");
+      const tabPanels = container.querySelectorAll(".cb-tab-panel");
+      const panelConfigs = {
+        own: {
+          idPrefix: "cb-own", nodes, talents,
+          builds: EXAMPLE_BUILDS,
+          buildsLabel: "Example Characters",
+          buildsEmptyMessage: "No example builds available."
+        },
+        prebuilt: {
+          idPrefix: "cb-prebuilt", nodes, talents,
+          builds: PREBUILT_BUILDS,
+          buildsLabel: "Pre-built Characters",
+          buildsEmptyMessage: "No pre-built characters yet.",
+          showStatFilter: true
         }
-      }
-
-      function refreshSelectedList() {
-        const added = [...addedTalentIds].map(id => talentById.get(id)).filter(Boolean)
-          .sort((a, b) => a.name.localeCompare(b.name));
-        selectedCount.textContent = `${added.length} talent${added.length === 1 ? "" : "s"} selected`;
-        selectedList.innerHTML = added.map(t => `
-          <li>
-            <span>${escapeHtml(t.name)}</span>
-            <button type="button" class="remove-talent" data-talent-id="${escapeHtml(t.id)}" title="Remove">&times;</button>
-          </li>
-        `).join("") || `<li class="selected-talent-empty">Click a node to add talents.</li>`;
-      }
-
-      function toggleTalent(id) {
-        if ( addedTalentIds.has(id) ) addedTalentIds.delete(id);
-        else addedTalentIds.add(id);
-        refreshNodeHighlights();
-        refreshSelectedList();
-        refreshPopouts();
-      }
-
-      const renderCard = talent => {
-        if ( !talent ) return {html: `<p class="tte-popout-empty">No talent assigned</p>`, className: ""};
-        const isLong = talent.description.length > POPOUT_TRUNCATE_LENGTH;
-        const expanded = expandedIds.has(talent.id);
-        const added = addedTalentIds.has(talent.id);
-        const text = (isLong && !expanded) ? `${talent.description.slice(0, POPOUT_TRUNCATE_LENGTH)}...` : talent.description;
-        const toggle = isLong
-          ? `<button type="button" class="tte-popout-toggle" data-talent-id="${escapeHtml(talent.id)}">${expanded ? "Show less" : "Read more"}</button>`
-          : "";
-        const addButton = `<button type="button" class="tte-popout-add${added ? " tte-popout-add--added" : ""}" data-add-talent-id="${escapeHtml(talent.id)}">${added ? "Remove" : "Add"}</button>`;
-        return {
-          html: `<h4>${escapeHtml(talent.name)}</h4><p>${escapeHtml(text)}</p>${renderActions(talent.actions)}<div class="tte-popout-actions">${toggle}${addButton}</div>`,
-          className: `${expanded ? "tte-popout--expanded" : ""}${added ? " tte-popout--added" : ""}`.trim()
-        };
       };
+      const mountedTabs = new Set();
 
-      const refreshPopouts = () => renderPopouts(popoutLayer, popoutLineG, selectedNode, talentById, projectPoint, renderCard);
-
-      popoutLayer.addEventListener("click", e => {
-        const addId = e.target?.dataset?.addTalentId;
-        if ( addId ) {
-          toggleTalent(addId);
-          return;
+      // Tree panels are only mounted once their tab becomes visible: fitToView() reads the
+      // SVG's rendered bounding box, which is zero-sized while its tab panel is display:none.
+      function activateTab(tabName) {
+        for ( const el of tabNavItems ) el.classList.toggle("active", el.dataset.tab === tabName);
+        for ( const el of tabPanels ) el.classList.toggle("active", el.dataset.tab === tabName);
+        if ( !mountedTabs.has(tabName) ) {
+          mountedTabs.add(tabName);
+          mountTreePanel(container.querySelector(`.cb-tab-panel[data-tab="${tabName}"]`), panelConfigs[tabName]);
         }
-        const toggleId = e.target?.dataset?.talentId;
-        if ( toggleId ) {
-          if ( expandedIds.has(toggleId) ) expandedIds.delete(toggleId);
-          else expandedIds.add(toggleId);
-          refreshPopouts();
-        }
-      });
-
-      selectedList.addEventListener("click", e => {
-        const id = e.target?.dataset?.talentId;
-        if ( id ) toggleTalent(id);
-      });
-
-      const getState = () => state;
-      const setState = next => {
-        state = next;
-        g.setAttribute("transform", `translate(${state.tx},${state.ty}) scale(${state.scale})`);
-        refreshPopouts();
-      };
-      const {wasDragged} = activatePanZoom(svg, g, getState, setState);
-
-      container.querySelector("#cb-reset").addEventListener("click", () => {
-        selectedNode = null;
-        expandedIds.clear();
-        for ( const el of nodeG.querySelectorAll(".tte-node--selected") ) el.classList.remove("tte-node--selected");
-        setState(fitToView(svg, g, onTreeNodes.map(n => n.point)));
-      });
-
-      svg.addEventListener("click", e => {
-        if ( wasDragged() ) return;
-        const id = e.target?.dataset?.nodeId;
-        for ( const el of nodeG.querySelectorAll(".tte-node--selected") ) el.classList.remove("tte-node--selected");
-        if ( !id ) {
-          selectedNode = null;
-          expandedIds.clear();
-          refreshPopouts();
-          return;
-        }
-        if ( selectedNode?.id !== id ) expandedIds.clear();
-        e.target.classList.add("tte-node--selected");
-        selectedNode = nodeById.get(id);
-        refreshPopouts();
-      });
-
-      const exampleSelect = container.querySelector("#cb-example-select");
-      const exampleSummary = container.querySelector("#cb-example-summary");
-
-      function loadExampleBuild(build) {
-        selectedNode = null;
-        expandedIds.clear();
-        addedTalentIds.clear();
-        for ( const id of build.talentIds ) addedTalentIds.add(id);
-        for ( const el of nodeG.querySelectorAll(".tte-node--selected") ) el.classList.remove("tte-node--selected");
-        refreshNodeHighlights();
-        refreshSelectedList();
-        refreshPopouts();
-        exampleSummary.innerHTML = `<p>${escapeHtml(build.summary)}</p>`;
       }
 
-      exampleSelect.addEventListener("change", () => {
-        const build = EXAMPLE_BUILDS[exampleSelect.value];
-        if ( !build ) {
-          exampleSummary.innerHTML = "";
-          return;
-        }
-        loadExampleBuild(build);
-      });
+      for ( const item of tabNavItems ) item.addEventListener("click", () => activateTab(item.dataset.tab));
 
-      refreshNodeHighlights();
-      refreshSelectedList();
+      activateTab("own");
     }
   });
 })();
